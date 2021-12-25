@@ -13,11 +13,11 @@ from PyQt5.QtWebEngineWidgets import *
 
 #TODO:
 #
-#   -make videos play in fullscreen
 # #
 
 #LOW PRIORITY:
 #
+#   -make videos play in fullscreen
 #   -redraw gui #self.setWindowFlags(QtCore.Qt.Window |QtCore.Qt.CustomizeWindowHint)
 #   -add ability to make own webapps(adblock, video downloader, etc.)
 #   -move stylesheets to separate file
@@ -113,7 +113,6 @@ class Browser(QMainWindow):
         self.noExitDialog.move(100,55)
         self.noExitDialog.clicked.connect(lambda: self.nbtnclck())
 
-        #print(historyPath)
         
         self.hw = HistoryWindow()
         
@@ -260,17 +259,9 @@ class Browser(QMainWindow):
 
         
 
-        self.tabs.currentWidget().page().fullScreenRequested.connect(self.FullscreenRequest)
         self.show()
         
-    def FullscreenRequest(self, request):
-        request.accept()
-        if request.toggleOn():
-            self.browser.setParent(None)
-            self.browser.showFullScreen()
-        else:
-            self.setCentralWidget(self.browser)
-            self.browser.showNormal()
+    
         
 
     def newTab(self, qurl = None, label = None):
@@ -387,8 +378,8 @@ class Browser(QMainWindow):
 
     def deleteFromHistory(self):
         i = self.hw.listwidget.row(self.hw.listwidget.currentItem())
-        print(i)
-        print(historyDirs)
+        #print(i)
+        #print(historyDirs)
         os.remove(historyDirs[i])
         print("Deleted: "+historyDirs[i])
         historyDirs.pop(i)

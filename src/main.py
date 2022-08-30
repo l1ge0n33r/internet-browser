@@ -3,6 +3,7 @@ import sys
 import os
 import glob
 from datetime import *
+from tkinter import W
 from PyQt5 import QtWidgets
 from PyQt5 import QtWebEngineWidgets
 from PyQt5 import QtCore
@@ -14,7 +15,7 @@ from PyQt5.QtWebEngineWidgets import *
 
 #TODO:
 # 
-#   - make webengineviews in seperate array
+
 #
 #
 #
@@ -38,7 +39,7 @@ from PyQt5.QtWebEngineWidgets import *
 #   -close tab button
 #   
 #  
-# 
+#   - make webengineviews in seperate array
 #   -make add from history
 #   -fix ghost site bug
 #   -make about to quit handler

@@ -1,3 +1,4 @@
+from re import I
 import sys
 import os
 import glob
@@ -12,6 +13,10 @@ from PyQt5.QtCore import *
 from PyQt5.QtWebEngineWidgets import *
 
 #TODO:
+# 
+#   - make webengineviews in seperate array
+#
+#
 #
 # #
 
@@ -94,6 +99,7 @@ class Browser(QMainWindow):
     def __init__(self,*args,**kwargs):
         super(Browser, self).__init__(*args, **kwargs)
         self.tabs = QTabWidget()
+        self.webviews = list()
         self.tabs.setTabsClosable(True)
         self.tabs.tabCloseRequested.connect(self.closeTab)
         self.tabs.currentChanged.connect(self.currentTabChanged)
@@ -103,8 +109,8 @@ class Browser(QMainWindow):
         self.exitDialog = QDialog()
         self.exitDialog.setWindowIcon(QIcon(os.path.join('config/images','ouroboros.ico')))
         self.exitDialog.setWindowTitle("Exit")
-        self.exitDialog.setGeometry(self.frameGeometry().width()/2,self.frameGeometry().height()/2, 200,100)
-        self.labelExitDialog = QLabel("Do you want to delete history?",self.exitDialog)
+        self.exitDialog.setGeometry(500,400, 200,100)
+        self.labelExitDialog = QLabel("Do you want to save history?",self.exitDialog)
         self.labelExitDialog.move(30,30)
         self.yesExitDialog = QPushButton("Yes",self.exitDialog)
         self.yesExitDialog.move(20,55)
@@ -163,12 +169,9 @@ class Browser(QMainWindow):
         """)
 
 
-        self.status = QStatusBar()
-        self.setStatusBar(self.status)
 
         navTab = QToolBar("Navigation")
         navTab.setIconSize(QSize(20,20))
-        navTab.allowedAreas()
         navTab.setFloatable(False)
         navTab.setMovable(False)
         self.addToolBar(navTab)
@@ -182,7 +185,7 @@ class Browser(QMainWindow):
         QToolButton:hover
         {
             border:1px;
-            background:#ccc
+            background:rgba(100,100,100,20)
         }
         QToolButton:selected
         {
@@ -249,13 +252,6 @@ class Browser(QMainWindow):
         self.tabs.currentWidget().urlChanged.connect(self.currentTabChanged)
         self.tabs.currentWidget().loadFinished.connect(self.currentTabChanged)
 
-        self.statusBar().setStyleSheet("""
-            QStatusBar
-            {
-                padding:50px;
-            }
-        """)
-        self.statusBar().setVisible(False)
 
         
 
@@ -272,10 +268,12 @@ class Browser(QMainWindow):
             qurl = defaultSearchSite
 
         tab = QWebEngineView()
-        tab.settings().setAttribute(QWebEngineSettings.FullScreenSupportEnabled, True)
+        #tab.settings().setAttribute(QWebEngineSettings.FullScreenSupportEnabled, True)
         
         tab.setUrl(QUrl(qurl))
         
+        self.webviews.append(tab)
+
         i = self.tabs.addTab(tab, label)
         
         self.tabs.setCurrentIndex(i)
@@ -296,7 +294,6 @@ class Browser(QMainWindow):
     def closeTab(self, i=None):
         if i is None:
             i = self.tabs.currentIndex()
-        
 
         if self.tabs.count()<2:
 
@@ -306,6 +303,8 @@ class Browser(QMainWindow):
             return
         
         self.updateHistory(self.tabs.currentWidget())
+        self.webviews[i].close()
+        self.webviews.pop(i)
         self.tabs.removeTab(i)
 
 
@@ -383,13 +382,12 @@ class Browser(QMainWindow):
         os.remove(historyDirs[i])
         print("Deleted: "+historyDirs[i])
         historyDirs.pop(i)
-        pass
         
 
 
 
     def showHistory(self):
-        #print('Beep ')
+        self.hw.listwidget.clear()
         self.hw.show()
         
         if self.hw.listwidget.count() != 0:
@@ -403,7 +401,6 @@ class Browser(QMainWindow):
         for p in historyDirs:
             with open(p,'r') as fp:
                 historyData[p] = str(p).replace('.txt','')[-26:] + fp.read()
-                #print(str(historyData[p]))
             fp.close()
         
         lurl = list()
@@ -413,16 +410,13 @@ class Browser(QMainWindow):
                 title = str(historyData[h]).split('\n')[1]
                 url = str(historyData[h]).split('\n')[2]
                 ltitle.append(title)
-                lurl.append(url)
-        
-        
-            
+                lurl.append(url)  
         self.hw.addSite(ltitle,lurl)
     
-    def ybtnclck(self):
+    def nbtnclck(self):
         self.deleteHistory()
         sys.exit()
-    def nbtnclck(self):
+    def ybtnclck(self):
         sys.exit()
 
 def closeHandle(object):

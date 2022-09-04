@@ -1,9 +1,7 @@
-from re import I
 import sys
 import os
 import glob
 from datetime import *
-from tkinter import W
 from PyQt5 import QtWidgets
 from PyQt5 import QtWebEngineWidgets
 from PyQt5 import QtCore
@@ -15,7 +13,6 @@ from PyQt5.QtWebEngineWidgets import *
 
 #TODO:
 # 
-
 #
 #
 #
@@ -53,9 +50,9 @@ from PyQt5.QtWebEngineWidgets import *
 # #
 
 defaultSearchSite = "https://duckduckgo.com"
-
 historyPath = "history"
 historyDirs = glob.glob(historyPath+'/*/*.txt')
+cachePath = "cache"
 
 class HistoryWindow(QWidget):
     def __init__(self):
@@ -78,13 +75,9 @@ class HistoryWindow(QWidget):
 
     def eventFilter(self, source, event):
         if event.type() == QEvent.ContextMenu and source is self.listwidget:
-            
-
             if self.menu.exec_(event.globalPos()):
                 item= source.itemAt(event.pos())
-               # print(self.listwidget.row(self.listwidget.currentItem()))  
             return True
-
         return super().eventFilter(source,event)
         
     def addSite(self, title,url):
@@ -92,8 +85,6 @@ class HistoryWindow(QWidget):
         self.listwidget.clear()
         for t in title:
             self.listwidget.addItem(t)
-
-
 
 class Browser(QMainWindow):
 
@@ -120,7 +111,6 @@ class Browser(QMainWindow):
         self.noExitDialog.move(100,55)
         self.noExitDialog.clicked.connect(lambda: self.nbtnclck())
 
-        
         self.hw = HistoryWindow()
         
         self.tabs.setStyleSheet("""
@@ -168,8 +158,6 @@ class Browser(QMainWindow):
                 color: white;
             }
         """)
-
-
 
         navTab = QToolBar("Navigation")
         navTab.setIconSize(QSize(20,20))
@@ -251,15 +239,9 @@ class Browser(QMainWindow):
         self.newTab()
         
         self.tabs.currentWidget().urlChanged.connect(self.currentTabChanged)
-        self.tabs.currentWidget().loadFinished.connect(self.currentTabChanged)
+        self.tabs.currentWidget().loadFinished.connect(self.currentTabChanged)        
 
-
-        
-
-        self.show()
-        
-    
-        
+        self.show()        
 
     def newTab(self, qurl = None, label = None):
 
@@ -274,19 +256,20 @@ class Browser(QMainWindow):
         tab.setUrl(QUrl(qurl))
         
         self.webviews.append(tab)
-
+        icon = tab.icon()
         i = self.tabs.addTab(tab, label)
-        
+
         self.tabs.setCurrentIndex(i)
+        
         tab.urlChanged.connect(lambda qurl, browser=tab:
                                     self.updateUrl(qurl, browser))
                                     
         tab.loadFinished.connect(lambda _, i=i, tab=tab:
                                     self.tabs.setTabText(i, tab.page().title()))
+        self.tabs.setTabIcon(self.tabs.currentIndex(),icon) 
 
     def navUrl(self):
         qurl = QUrl(self.urlbar.text())
-        #print(qurl)
         if qurl.scheme() == '':
             qurl.setScheme('http')
        
@@ -297,7 +280,6 @@ class Browser(QMainWindow):
             i = self.tabs.currentIndex()
 
         if self.tabs.count()<2:
-
             self.hw.destroy()
             closeHandle(self)
             sys.exit()
@@ -307,7 +289,6 @@ class Browser(QMainWindow):
         self.webviews[i].close()
         self.webviews.pop(i)
         self.tabs.removeTab(i)
-
 
     def updateUrl(self, url, tab = None):
         if tab != self.tabs.currentWidget():
@@ -327,7 +308,6 @@ class Browser(QMainWindow):
     def updateTitle(self, tab):
         if tab != self.tabs.currentWidget():
             return
-
         title = self.tabs.currentWidget().page().title()
         #print(title)
         self.setWindowTitle("%s Orobo"%title)
@@ -342,28 +322,18 @@ class Browser(QMainWindow):
     def addToHistory(self):
         currentDate = str(date.today())
         pathCD = os.path.join(historyPath,currentDate)
-        #print(pathCD)
-        #print(os.path.join(pathCD, '%s'%str(datetime.now().time()).replace(' ','').replace(':','.')))
         if not os.path.isdir(pathCD):
             os.makedirs(pathCD, 0o755)
    
         with open(os.path.join(pathCD,'%s.txt'%str(datetime.now().time()).replace(' ','').replace(':','.')), 'w+') as fw:
-            
-          #  print(os.path.join(pathCD, '%s'%str(datetime.now().time()).replace(' ','').replace(':','.')))
             tabIndex = self.tabs.currentIndex()
-          #  print(tabIndex)
             tabName = self.tabs.tabText(tabIndex)
-           # print(tabName)
             tabUrl =  str(self.tabs.currentWidget().page().url())[19:-2]
-
-            #print(tabUrl)
             fw.write('%s\n%s\n%s'%(tabIndex,tabName,tabUrl))
         fw.close()
 
     def addFromHistory(self):
-        
         url = self.hw.sites[self.hw.listwidget.row(self.hw.listwidget.currentItem())]
-
         self.newTab(url)
         
     def deleteHistory(self):
@@ -378,14 +348,9 @@ class Browser(QMainWindow):
 
     def deleteFromHistory(self):
         i = self.hw.listwidget.row(self.hw.listwidget.currentItem())
-        #print(i)
-        #print(historyDirs)
         os.remove(historyDirs[i])
         print("Deleted: "+historyDirs[i])
         historyDirs.pop(i)
-        
-
-
 
     def showHistory(self):
         self.hw.listwidget.clear()

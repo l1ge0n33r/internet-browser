@@ -1,0 +1,14 @@
+{
+    "python.pythonPath": "C:\\Python38\\python.exe",
+    "workbench.colorTheme": "Solarized Dark",
+    "workbench.iconTheme": "Monokai Pro Icons",
+    "powermode.enabled": false, //kinda brokes text
+    "terminal.integrated.shell.windows": "C:\\Program Files\\Git\\bin\\bash.exe",
+    "workbench.editorAssociations": {
+        "*.ipynb": "jupyter.notebook.ipynb"
+    },
+    "editor.suggestSelection": "first",
+    "vsintellicode.modify.editor.suggestSelection": "automaticallyOverrodeDefaultValue",
+    "python.defaultInterpreterPath": "C:\\Python38\\python.exe"
+    
+}

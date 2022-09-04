@@ -10,6 +10,7 @@ from PyQt5.QtWidgets import QHBoxLayout, QVBoxLayout
 from PyQt5.QtGui import *
 from PyQt5.QtCore import *
 from PyQt5.QtWebEngineWidgets import *
+from PyQt5 import QtNetwork
 
 #TODO:
 # 
@@ -256,35 +257,30 @@ class Browser(QMainWindow):
         tab.setUrl(QUrl(qurl))
         
         self.webviews.append(tab)
-        icon = tab.icon()
         i = self.tabs.addTab(tab, label)
 
         self.tabs.setCurrentIndex(i)
-        
+        self.updateIcon() 
         tab.urlChanged.connect(lambda qurl, browser=tab:
                                     self.updateUrl(qurl, browser))
                                     
         tab.loadFinished.connect(lambda _, i=i, tab=tab:
                                     self.tabs.setTabText(i, tab.page().title()))
-        self.tabs.setTabIcon(self.tabs.currentIndex(),icon) 
 
     def navUrl(self):
         qurl = QUrl(self.urlbar.text())
         if qurl.scheme() == '':
             qurl.setScheme('http')
-       
         self.tabs.currentWidget().setUrl(qurl)
 
     def closeTab(self, i=None):
         if i is None:
             i = self.tabs.currentIndex()
-
         if self.tabs.count()<2:
             self.hw.destroy()
             closeHandle(self)
             sys.exit()
             return
-        
         self.updateHistory(self.tabs.currentWidget())
         self.webviews[i].close()
         self.webviews.pop(i)
@@ -312,6 +308,17 @@ class Browser(QMainWindow):
         #print(title)
         self.setWindowTitle("%s Orobo"%title)
     
+    def updateIcon(self):
+        manager = QtNetwork.QNetworkAccessManager(self)
+        manager.finished.connect(self.setIconFromReply)
+        print(self.webviews[self.tabs.currentIndex()].iconUrl())
+        manager.get(QtNetwork.QNetworkRequest(self.webviews[self.tabs.currentIndex()].iconUrl()))
+
+    def setIconFromReply(self, reply):
+        p = QPixmap()
+        p.loadFromData(reply.readAll(),format="ico")
+        self.tabs.setTabIcon(self.tabs.currentIndex(),QIcon(p))
+
     def updateHistory(self, tab = None):
         if tab != self.tabs.currentWidget():
             return
@@ -382,9 +389,15 @@ class Browser(QMainWindow):
     def nbtnclck(self):
         self.deleteHistory()
         sys.exit()
+
     def ybtnclck(self):
         sys.exit()
 
+    def downloadIcon(self):
+        i = self.tabs.currentIndex()
+
+            
+        
 def closeHandle(object):
     object.exitDialog.exec_()
    

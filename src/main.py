@@ -1,16 +1,18 @@
 import sys
 import os
 import glob
+import bs4
+import requests
 from datetime import *
 from PyQt5 import QtWidgets
 from PyQt5 import QtWebEngineWidgets
 from PyQt5 import QtCore
+from PyQt5 import QtNetwork
 from PyQt5.QtWidgets import *
 from PyQt5.QtWidgets import QHBoxLayout, QVBoxLayout
 from PyQt5.QtGui import *
 from PyQt5.QtCore import *
 from PyQt5.QtWebEngineWidgets import *
-from PyQt5 import QtNetwork
 
 #TODO:
 # 
@@ -125,6 +127,7 @@ class Browser(QMainWindow):
                 color: #3b3b3b;
                 width:200px;
                 height: 30px;
+                padding-left:10px;
                 text-align:left;
                 border: 1px solid #a3a0a3;
                 border-top-left-radius: 4px;
@@ -152,12 +155,13 @@ class Browser(QMainWindow):
             QTabBar::close-button:hover {
                 image: url('config/images/close-hover.png');
             }
-            QLabel {
+            QTabBar::tab QLable {
                 background-color: #23272a;
                 font-size: 22px;
-                padding-left: 5px;
+                padding-left: 3px;
                 color: white;
             }
+           
         """)
 
         navTab = QToolBar("Navigation")
@@ -256,10 +260,16 @@ class Browser(QMainWindow):
         
         tab.setUrl(QUrl(qurl))
         
+
         self.webviews.append(tab)
+
         i = self.tabs.addTab(tab, label)
 
         self.tabs.setCurrentIndex(i)
+
+        
+
+
         self.updateIcon() 
         tab.urlChanged.connect(lambda qurl, browser=tab:
                                     self.updateUrl(qurl, browser))
@@ -267,11 +277,21 @@ class Browser(QMainWindow):
         tab.loadFinished.connect(lambda _, i=i, tab=tab:
                                     self.tabs.setTabText(i, tab.page().title()))
 
+    def _setIconFromReply(self, reply):
+        p = QPixmap()
+        p.loadFromData(reply.readAll(), format="ico")
+        self.tabs.setTabIcon(self.tabs.currentIndex(),QIcon(p))
+
     def navUrl(self):
         qurl = QUrl(self.urlbar.text())
         if qurl.scheme() == '':
             qurl.setScheme('http')
-        self.tabs.currentWidget().setUrl(qurl)
+        rqurl = qurl.toString()
+        rnewqurl = rqurl[:5]+"//"+rqurl[5:]
+        print(rnewqurl)
+        newqurl = QUrl(rnewqurl)
+        print(newqurl.toString())
+        self.tabs.currentWidget().setUrl(newqurl)
 
     def closeTab(self, i=None):
         if i is None:
@@ -297,8 +317,11 @@ class Browser(QMainWindow):
         qurl = self.tabs.currentWidget().url()
         self.updateTitle(self.tabs.currentWidget())
         self.updateUrl(qurl, self.tabs.currentWidget())
-        self.tabs.setTabText(self.tabs.currentIndex(), self.tabs.currentWidget().page().title())
-       # print(qurl.toString())
+        if len(self.tabs.currentWidget().page().title()) > 24 :
+            self.tabs.setTabText(self.tabs.currentIndex(), self.tabs.currentWidget().page().title()[:26]+"...")
+        else :
+            self.tabs.setTabText(self.tabs.currentIndex(), self.tabs.currentWidget().page().title())
+        self.updateIcon()
         self.updateHistory(self.tabs.currentWidget())
 
     def updateTitle(self, tab):
@@ -309,15 +332,34 @@ class Browser(QMainWindow):
         self.setWindowTitle("%s Orobo"%title)
     
     def updateIcon(self):
-        manager = QtNetwork.QNetworkAccessManager(self)
-        manager.finished.connect(self.setIconFromReply)
-        print(self.webviews[self.tabs.currentIndex()].iconUrl())
-        manager.get(QtNetwork.QNetworkRequest(self.webviews[self.tabs.currentIndex()].iconUrl()))
+        pUrl = self.findIco(self.tabs.currentWidget().url())
 
-    def setIconFromReply(self, reply):
-        p = QPixmap()
-        p.loadFromData(reply.readAll(),format="ico")
-        self.tabs.setTabIcon(self.tabs.currentIndex(),QIcon(p))
+        if pUrl is False:
+            return
+            
+        manager = QtNetwork.QNetworkAccessManager(self)
+        manager.finished.connect(self._setIconFromReply)
+        manager.get(QtNetwork.QNetworkRequest(pUrl))
+        # load icon with ico parsed from page code
+
+    def findIco(self,url):
+        picUrl = QUrl()
+        if isinstance(url,QUrl):
+            url = url.toString()
+        page = requests.get(url)
+        
+
+        soup = bs4.BeautifulSoup(page.text,features="html.parser")
+
+        a = soup.find('link', type='image/x-icon')
+        if not a['href'].startswith('http'):
+            picUrl = QUrl(url+a['href'])
+        else:
+            picUrl = QUrl(a['href'])
+        return picUrl
+
+        #finds icon with beautiful soup 
+        #returns found icon
 
     def updateHistory(self, tab = None):
         if tab != self.tabs.currentWidget():
